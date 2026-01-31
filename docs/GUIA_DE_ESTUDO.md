@@ -457,3 +457,358 @@ Na **Fase 1** vamos:
 
 *Documento criado em: Janeiro 2026*
 *Projeto: WhatsApp E-commerce Bot*
+
+---
+
+# 🚀 FASE 1: Estrutura Base e Configurações
+
+## 🎯 Objetivo da Fase 1
+
+Criar a estrutura de pastas seguindo a **Clean Architecture** e configurar todas as dependências do projeto.
+
+---
+
+## 📋 Passo 1: Entendendo a Clean Architecture
+
+### O que é Clean Architecture?
+
+Clean Architecture é uma forma de organizar código criada por **Robert C. Martin** (Uncle Bob). A ideia principal é:
+
+> **Separar o código em camadas que não dependem de detalhes externos.**
+
+```
+┌───────────────────────────────────────────────────┐
+│                  PRESENTATION                      │
+│        (API REST, Handlers do WhatsApp)           │
+└─────────────────────┬─────────────────────────────┘
+                      │
+                      ▼
+┌───────────────────────────────────────────────────┐
+│                  APPLICATION                       │
+│              (Casos de Uso)                        │
+└─────────────────────┬─────────────────────────────┘
+                      │
+                      ▼
+┌───────────────────────────────────────────────────┐
+│                    DOMAIN                          │
+│         (Entidades, Regras de Negócio)            │
+└───────────────────────────────────────────────────┘
+                      ▲
+                      │
+┌───────────────────────────────────────────────────┐
+│                 INFRASTRUCTURE                     │
+│         (Banco de Dados, APIs Externas)           │
+└───────────────────────────────────────────────────┘
+```
+
+### Por que usar Clean Architecture?
+
+1. **Testabilidade**: Fácil testar cada camada isoladamente
+2. **Manutenibilidade**: Mudanças em uma camada não afetam outras
+3. **Independência de Frameworks**: O domínio não sabe que existe FastAPI
+4. **Independência de Banco**: O domínio não sabe que existe PostgreSQL
+
+### As 4 Camadas do Nosso Projeto
+
+| Camada | Pasta | Responsabilidade |
+|--------|-------|-----------------|
+| **Domain** | `src/domain/` | Regras de negócio, entidades |
+| **Application** | `src/application/` | Casos de uso, orquestração |
+| **Infrastructure** | `src/infrastructure/` | Banco, cache, WhatsApp |
+| **Presentation** | `src/presentation/` | API REST, webhooks |
+
+---
+
+## 📋 Passo 2: Criando a Estrutura de Pastas
+
+### Comandos usados (Windows PowerShell):
+
+```powershell
+# Criar pastas do src
+New-Item -ItemType Directory -Force -Path `
+    "src/domain/entities", `
+    "src/domain/repositories", `
+    "src/domain/services", `
+    "src/application/usecases", `
+    "src/application/dtos", `
+    "src/infrastructure/database/repositories", `
+    "src/infrastructure/cache", `
+    "src/infrastructure/whatsapp", `
+    "src/presentation/api/routes", `
+    "src/presentation/whatsapp", `
+    "src/config", `
+    "src/shared/errors", `
+    "src/shared/utils", `
+    "src/shared/types"
+
+# Criar pastas de testes
+New-Item -ItemType Directory -Force -Path `
+    "tests/unit/domain/entities", `
+    "tests/unit/application", `
+    "tests/unit/infrastructure", `
+    "tests/integration", `
+    "tests/e2e"
+```
+
+### Estrutura Final:
+
+```
+📁 src/
+├── 📁 domain/           # Camada mais interna (regras de negócio)
+│   ├── 📁 entities/     # Objetos do negócio (Customer, Product)
+│   ├── 📁 repositories/ # Interfaces de acesso a dados
+│   └── 📁 services/     # Serviços de domínio
+│
+├── 📁 application/      # Camada de aplicação
+│   ├── 📁 usecases/     # Casos de uso (HandleMessage, GetProducts)
+│   └── 📁 dtos/         # Objetos de transferência de dados
+│
+├── 📁 infrastructure/   # Camada de infraestrutura
+│   ├── 📁 database/     # SQLAlchemy, PostgreSQL
+│   ├── 📁 cache/        # Redis
+│   └── 📁 whatsapp/     # Cliente WhatsApp
+│
+├── 📁 presentation/     # Camada de apresentação
+│   ├── 📁 api/          # FastAPI REST
+│   └── 📁 whatsapp/     # Handlers de mensagens
+│
+├── 📁 config/           # Configurações (settings.py)
+└── 📁 shared/           # Código compartilhado
+    ├── 📁 errors/       # Exceções customizadas
+    ├── 📁 utils/        # Funções utilitárias
+    └── 📁 types/        # Enums e tipos globais
+```
+
+---
+
+## 📋 Passo 3: Arquivos __init__.py
+
+### O que é __init__.py?
+
+Em Python, uma pasta só é reconhecida como **pacote** (módulo importável) se tiver um arquivo `__init__.py`.
+
+```python
+# Sem __init__.py:
+from src.domain.entities import Customer  # ❌ ERRO: não é um pacote
+
+# Com __init__.py:
+from src.domain.entities import Customer  # ✅ Funciona!
+```
+
+### Conteúdo dos nossos __init__.py:
+
+Cada arquivo tem uma **docstring** explicando o propósito da pasta:
+
+```python
+# src/domain/__init__.py
+"""
+Camada de DOMÍNIO (Domain Layer).
+
+Esta é a camada mais interna da Clean Architecture.
+REGRAS:
+- Esta camada NÃO depende de nenhuma outra
+- NÃO importar nada de infrastructure ou presentation
+"""
+```
+
+---
+
+## 📋 Passo 4: Configurando pyproject.toml
+
+### O que é pyproject.toml?
+
+É o arquivo de configuração padrão para projetos Python modernos. Ele substitui:
+- `setup.py` (configuração do pacote)
+- `requirements.txt` (dependências)
+- `setup.cfg` (configurações extras)
+
+### Estrutura do pyproject.toml:
+
+```toml
+# [project] - Metadados do projeto
+[project]
+name = "whatsapp-ecommerce-bot"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+# dependencies - Bibliotecas que o projeto PRECISA
+dependencies = [
+    "fastapi>=0.109.0",      # Web Framework
+    "pydantic>=2.5.0",       # Validação
+    "sqlalchemy>=2.0.25",    # ORM
+    "redis>=5.0.0",          # Cache
+]
+
+# [project.optional-dependencies] - Só para desenvolvimento
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",         # Testes
+    "ruff>=0.1.0",           # Linter
+    "mypy>=1.8.0",           # Type checking
+]
+```
+
+### Nossas Dependências Explicadas:
+
+| Biblioteca | Propósito | Documentação |
+|------------|-----------|--------------|
+| **fastapi** | API REST moderna e rápida | https://fastapi.tiangolo.com/ |
+| **pydantic** | Validação de dados | https://docs.pydantic.dev/ |
+| **sqlalchemy** | ORM para banco de dados | https://docs.sqlalchemy.org/ |
+| **redis** | Cache e sessões | https://redis.io/docs/ |
+| **httpx** | Cliente HTTP assíncrono | https://www.python-httpx.org/ |
+| **structlog** | Logging estruturado | https://www.structlog.org/ |
+
+---
+
+## 📋 Passo 5: Variáveis de Ambiente (.env)
+
+### O que são variáveis de ambiente?
+
+São valores de configuração que ficam **fora do código**. Isso é importante porque:
+
+1. **Segurança**: Senhas não ficam no código (que pode ir pro GitHub)
+2. **Flexibilidade**: Mudar configurações sem alterar código
+3. **Ambientes**: Valores diferentes para dev/staging/produção
+
+### Arquivo .env.example (template):
+
+```env
+# App
+APP_NAME=whatsapp-ecommerce-bot
+APP_ENV=development       # development, staging, production
+DEBUG=true
+
+# NUNCA compartilhe este valor!
+SECRET_KEY=sua-chave-secreta-aqui
+
+# Banco de Dados
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/db
+
+# Cache
+REDIS_URL=redis://localhost:6379/0
+```
+
+### Fluxo de uso:
+
+```
+1. Copiar template:  cp .env.example .env
+2. Editar valores:   (preencher senhas reais)
+3. .env está no .gitignore (não vai pro Git)
+```
+
+---
+
+## 📋 Passo 6: Pydantic Settings
+
+### O que é Pydantic Settings?
+
+Uma biblioteca que carrega variáveis de ambiente e as valida automaticamente.
+
+### Como funciona:
+
+```python
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # Cada atributo = uma variável de ambiente
+    app_name: str = "default"      # APP_NAME no .env
+    debug: bool = False            # DEBUG no .env
+    secret_key: str                # SECRET_KEY (obrigatório!)
+    
+# A mágica acontece aqui:
+settings = Settings()  # Carrega .env automaticamente!
+print(settings.app_name)  # "whatsapp-ecommerce-bot"
+```
+
+### Benefícios:
+
+1. **Validação de tipos**: Se `DEBUG=abc`, dá erro (esperava bool)
+2. **Valores obrigatórios**: Se `SECRET_KEY` não existir, erro
+3. **Valores padrão**: Se `APP_NAME` não existir, usa "default"
+4. **Documentação automática**: Type hints servem como docs
+
+### O decorator @lru_cache:
+
+```python
+from functools import lru_cache
+
+@lru_cache  # Cacheia o resultado
+def get_settings() -> Settings:
+    return Settings()
+
+# Primeira chamada: cria Settings (lê .env)
+get_settings()
+
+# Segunda chamada: retorna o mesmo objeto (não lê .env de novo)
+get_settings()
+```
+
+---
+
+## 📋 Passo 7: Instalando Dependências
+
+### Comando usado:
+
+```bash
+# Ativar ambiente virtual primeiro!
+.venv\Scripts\Activate
+
+# Instalar projeto em modo editável + dependências dev
+pip install -e ".[dev]"
+```
+
+### O que significa `-e ".[dev]"`?
+
+- `-e`: Modo **editável** (edits são refletidos imediatamente)
+- `.`: Instala o pacote do diretório atual
+- `[dev]`: Inclui as dependências opcionais de desenvolvimento
+
+---
+
+## ✅ Verificação da Fase 1
+
+### Comandos de teste:
+
+```bash
+# Testar se settings carrega
+python -c "from src.config.settings import get_settings; print(get_settings().app_name)"
+# Resultado: whatsapp-ecommerce-bot
+
+# Testar se FastAPI está instalado
+python -c "import fastapi; print(fastapi.__version__)"
+# Resultado: 0.128.0
+
+# Testar se pytest funciona
+pytest --version
+# Resultado: pytest 9.0.2
+```
+
+---
+
+## ✅ Checklist da Fase 1
+
+- [x] Estrutura de pastas criada (Clean Architecture)
+- [x] 22 arquivos `__init__.py` criados
+- [x] `pyproject.toml` com todas as dependências
+- [x] `.env.example` (template documentado)
+- [x] `.env` (arquivo local, não versionado)
+- [x] `src/config/settings.py` (Pydantic Settings)
+- [x] Dependências instaladas
+- [x] Importações funcionando
+- [x] Commit da Fase 1 feito
+
+---
+
+## ➡️ Próxima Fase
+
+Na **Fase 2** vamos:
+1. Criar as **Entidades de Domínio** (Customer, Product, Order, Session)
+2. Criar os **Enums** (OrderStatus, SessionState)
+3. Escrever **testes unitários** para as entidades
+4. Aprender sobre **dataclasses** do Python
+
+---
+
+*Documento atualizado em: Janeiro 2026*
+*Fase 1 concluída com sucesso!*
