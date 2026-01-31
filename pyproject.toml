@@ -1,7 +1,179 @@
+# ===========================================================
+# pyproject.toml - Configuração do Projeto Python
+# ===========================================================
+# Este é o arquivo de configuração padrão para projetos Python
+# modernos.Ele substitui os antigos setup.py e requirements.txt
+#
+# SEÇÕES:
+# [project] - Metadados e dependências do projeto
+# [project.optional-dependencies] - Dependências de desenvolvimento
+# [tool.*] - Configurações de ferramentas (pytest, ruff, mypy)
+# [build-system] - Como construir o pacote
+# ===========================================================
+
 [project]
+# Nome do pacote (usado no pip install)
 name = "whatsapp-ecommerce-bot"
+
+# Versão atual (Semantic Versioning: MAJOR.MINOR.PATCH)
 version = "0.1.0"
-description = "Add your description here"
+
+# Descrição curta (aparece no PyPI)
+description = "Chatbot WhatsApp para E-commerce"
+
+# Arquivo com documentação detalhada
 readme = "README.md"
+
+# Versão mínima do Python necessária
 requires-python = ">=3.12"
-dependencies = []
+
+# ===== DEPENDÊNCIAS PRINCIPAIS =====
+# Bibliotecas que o projeto PRECISA para funcionar
+dependencies = [
+    # ----- Web Framework -----
+    # FastAPI: Framework web moderno e rápido
+    # Docs: https://fastapi.tiangolo.com/
+    "fastapi>=0.109.0",
+    
+    # Uvicorn: Servidor ASGI para rodar FastAPI
+    # [standard] inclui uvloop e httptools para performance
+    "uvicorn[standard]>=0.27.0",
+    
+    # ----- Validação e Configurações -----
+    # Pydantic: Validação de dados com type hints
+    # Docs: https://docs.pydantic.dev/
+    "pydantic>=2.5.0",
+    
+    # Pydantic Settings: Carrega .env automaticamente
+    "pydantic-settings>=2.1.0",
+    
+    # ----- Banco de Dados -----
+    # SQLAlchemy: ORM (Object-Relational Mapping)
+    # Docs: https://docs.sqlalchemy.org/
+    "sqlalchemy>=2.0.25",
+    
+    # Alembic: Migrations de banco de dados
+    # Docs: https://alembic.sqlalchemy.org/
+    "alembic>=1.13.0",
+    
+    # asyncpg: Driver assíncrono para PostgreSQL
+    "asyncpg>=0.29.0",
+    
+    # ----- Cache -----
+    # Redis: Cache e armazenamento de sessões
+    # Docs: https://redis.io/
+    "redis>=5.0.0",
+    
+    # ----- HTTP Client -----
+    # httpx: Cliente HTTP moderno e assíncrono
+    # Usado para chamadas à API do WhatsApp
+    "httpx>=0.26.0",
+    
+    # ----- Segurança -----
+    # python-jose: Criação e verificação de JWT tokens
+    "python-jose[cryptography]>=3.3.0",
+    
+    # passlib: Hashing de senhas (bcrypt)
+    "passlib[bcrypt]>=1.7.4",
+    
+    # slowapi: Rate limiting para FastAPI
+    "slowapi>=0.1.9",
+    
+    # ----- Logging -----
+    # structlog: Logging estruturado (JSON)
+    "structlog>=24.1.0",
+    
+    # ----- Utilitários -----
+    # python-dotenv: Carrega variáveis de .env (backup)
+    "python-dotenv>=1.0.0",
+    
+    # bleach: Sanitização de HTML/texto (previne XSS)
+    "bleach>=6.1.0",
+]
+
+# ===== DEPENDÊNCIAS DE DESENVOLVIMENTO =====
+# Instaladas apenas para desenvolvimento/testes
+# Comando: pip install -e ".[dev]"
+[project.optional-dependencies]
+dev = [
+    # ----- Testes -----
+    # pytest: Framework de testes
+    "pytest>=8.0.0",
+    
+    # pytest-asyncio: Suporte para testes assíncronos
+    "pytest-asyncio>=0.23.0",
+    
+    # pytest-cov: Relatório de cobertura de código
+    "pytest-cov>=4.1.0",
+    
+    # ----- Qualidade de Código -----
+    # ruff: Linter e formatter ultrarrápido
+    # Substitui flake8, isort, black
+    "ruff>=0.1.0",
+    
+    # mypy: Verificação de tipos estáticos
+    "mypy>=1.8.0",
+    
+    # pre-commit: Hooks do Git para qualidade
+    "pre-commit>=3.6.0",
+]
+
+# ===== CONFIGURAÇÃO DO PYTEST =====
+[tool.pytest.ini_options]
+# Pasta onde estão os testes
+testpaths = ["tests"]
+
+# Modo assíncrono automático
+asyncio_mode = "auto"
+
+# Opções padrão ao rodar pytest:
+# -v: verbose (mostra nome dos testes)
+# --cov=src: mede cobertura da pasta src
+# --cov-report=term-missing: mostra linhas não cobertas
+addopts = "-v --cov=src --cov-report=term-missing"
+
+# ===== CONFIGURAÇÃO DO RUFF (Linter) =====
+[tool.ruff]
+# Versão do Python alvo
+target-version = "py312"
+
+# Comprimento máximo de linha (padrão Black)
+line-length = 88
+
+# Regras ativadas:
+# E: Erros do pycodestyle
+# F: Erros do pyflakes
+# I: Ordenação de imports (isort)
+# N: Convenções de nomenclatura (pep8-naming)
+# W: Warnings do pycodestyle
+# UP: pyupgrade (modernização de código)
+select = ["E", "F", "I", "N", "W", "UP"]
+
+# ===== CONFIGURAÇÃO DO MYPY (Type Checker) =====
+[tool.mypy]
+# Versão do Python
+python_version = "3.12"
+
+# Modo estrito (mais verificações)
+strict = true
+
+# Avisar sobre `return Any`
+warn_return_any = true
+
+# Avisar sobre `# type: ignore` não usados
+warn_unused_ignores = true
+
+# ===== BUILD SYSTEM =====
+# Define como construir o pacote para distribuição
+[build-system]
+# Dependências necessárias para build
+requires = ["hatchling"]
+
+# Backend de build (hatchling é moderno e simples)
+build-backend = "hatchling.build"
+
+# ===== CONFIGURAÇÃO DO HATCH (Build) =====
+# Diz ao hatchling onde encontrar o código fonte
+[tool.hatch.build.targets.wheel]
+# Inclui a pasta src no pacote
+packages = ["src"]
