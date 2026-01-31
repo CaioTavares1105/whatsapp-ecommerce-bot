@@ -1,0 +1,158 @@
+# ===========================================================
+# .gitignore - WhatsApp E-commerce Bot
+# ===========================================================
+# Este arquivo define quais arquivos/pastas o Git deve IGNORAR
+# (não versionar). Isso é essencial para:
+# 1. Não versionar arquivos sensíveis (senhas, tokens)
+# 2. Não versionar arquivos gerados automaticamente
+# 3. Manter o repositório limpo e leve
+# ===========================================================
+
+# -----------------------------------------------------------
+# PYTHON - Arquivos gerados pelo interpretador
+# -----------------------------------------------------------
+# __pycache__ são arquivos .pyc compilados (bytecode Python)
+# Eles são gerados automaticamente e não devem ser versionados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos de otimização do Python 3.8+
+*.pyo
+
+# -----------------------------------------------------------
+# AMBIENTES VIRTUAIS - Pastas de dependências locais
+# -----------------------------------------------------------
+# O ambiente virtual contém TODAS as bibliotecas instaladas
+# Cada desenvolvedor deve criar seu próprio .venv
+.venv/
+venv/
+ENV/
+env/
+
+# -----------------------------------------------------------
+# VARIÁVEIS DE AMBIENTE - NUNCA VERSIONAR!
+# -----------------------------------------------------------
+# O arquivo .env contém SENHAS, TOKENS e CHAVES SECRETAS
+# Se você versionar isso, qualquer pessoa pode roubar suas credenciais!
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# -----------------------------------------------------------
+# IDEs e EDITORES - Configurações pessoais
+# -----------------------------------------------------------
+# Cada desenvolvedor pode usar IDE diferente
+# As configurações são pessoais e não devem ser compartilhadas
+.idea/                    # PyCharm / IntelliJ
+.vscode/                  # VS Code (alguns preferem versionar)
+*.swp                     # Vim swap files
+*.swo                     # Vim swap files
+*.sublime-project         # Sublime Text
+*.sublime-workspace       # Sublime Text
+.spyderproject            # Spyder IDE
+.spyproject               # Spyder IDE
+
+# -----------------------------------------------------------
+# TESTES - Arquivos gerados pelo pytest
+# -----------------------------------------------------------
+# Cache de testes e relatórios de cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# -----------------------------------------------------------
+# BUILD e DISTRIBUIÇÃO - Pacotes gerados
+# -----------------------------------------------------------
+# Esses arquivos são gerados ao empacotar o projeto
+dist/
+build/
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+pip-wheel-metadata/
+__pypackages__/
+
+# -----------------------------------------------------------
+# LOGS - Arquivos de log do sistema
+# -----------------------------------------------------------
+# Logs são gerados em runtime e podem crescer muito
+*.log
+logs/
+log/
+
+# -----------------------------------------------------------
+# BANCO DE DADOS LOCAL - Arquivos de desenvolvimento
+# -----------------------------------------------------------
+# SQLite e outros bancos de arquivo único
+*.db
+*.sqlite3
+*.sqlite
+
+# -----------------------------------------------------------
+# WHATSAPP - Arquivos de sessão (MUITO SENSÍVEL!)
+# -----------------------------------------------------------
+# ATENÇÃO: Esses arquivos contêm a sessão do WhatsApp logada
+# Se alguém tiver acesso, pode usar sua conta do WhatsApp!
+auth_info/
+session/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# -----------------------------------------------------------
+# SISTEMA OPERACIONAL - Arquivos de sistema
+# -----------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# -----------------------------------------------------------
+# UV e PACKAGE MANAGERS - Arquivos de lock opcionais
+# -----------------------------------------------------------
+# Alguns projetos preferem versionar, outros não
+# Neste caso, vamos ignorar o uv.lock
+.uv/
+# uv.lock  # Descomente se quiser ignorar
+
+# -----------------------------------------------------------
+# TEMPORÁRIOS e CACHE
+# -----------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+.cache/
+
+# -----------------------------------------------------------
+# DOCKER - Arquivos de desenvolvimento Docker
+# -----------------------------------------------------------
+# Volumes locais do Docker (se existirem)
+docker-compose.override.yml
+
+# -----------------------------------------------------------
+# MISC - Outros arquivos comuns
+# -----------------------------------------------------------
+*.pid
+*.seed
+*.pid.lock
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
