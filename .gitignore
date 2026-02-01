@@ -9,6 +9,15 @@
 # ===========================================================
 
 # -----------------------------------------------------------
+# DOCUMENTAÇÃO PESSOAL - Não versionar
+# -----------------------------------------------------------
+# Arquivos de estudo e documentação pessoal
+# Esses arquivos são para aprendizado local
+docs/
+*.md
+!README.md
+
+# -----------------------------------------------------------
 # PYTHON - Arquivos gerados pelo interpretador
 # -----------------------------------------------------------
 # __pycache__ são arquivos .pyc compilados (bytecode Python)
