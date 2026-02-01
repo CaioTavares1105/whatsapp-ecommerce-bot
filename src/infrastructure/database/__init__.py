@@ -2,10 +2,45 @@
 # src/infrastructure/database/__init__.py
 # ===========================================================
 """
-Módulo de banco de dados.
+Módulo de infraestrutura de banco de dados.
 
-Contém:
-- connection.py: Configuração da conexão SQLAlchemy
-- models.py: Modelos ORM (mapeamento objeto-relacional)
-- repositories/: Implementações concretas dos repositórios
+Exporta:
+- Modelos SQLAlchemy
+- Conexão e factory de sessões
+- Repositórios concretos
 """
+
+from src.infrastructure.database.models import (
+    Base,
+    CustomerModel,
+    ProductModel,
+    OrderModel,
+    SessionModel,
+)
+from src.infrastructure.database.connection import (
+    engine,
+    AsyncSessionFactory,
+    get_db_session,
+    create_all_tables,
+    drop_all_tables,
+)
+from src.infrastructure.database.repositories import (
+    SQLAlchemyCustomerRepository,
+)
+
+__all__ = [
+    # Models
+    "Base",
+    "CustomerModel",
+    "ProductModel",
+    "OrderModel",
+    "SessionModel",
+    # Connection
+    "engine",
+    "AsyncSessionFactory",
+    "get_db_session",
+    "create_all_tables",
+    "drop_all_tables",
+    # Repositories
+    "SQLAlchemyCustomerRepository",
+]
