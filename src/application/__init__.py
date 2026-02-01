@@ -2,22 +2,30 @@
 # src/application/__init__.py
 # ===========================================================
 """
-Camada de APLICAÇÃO (Application Layer).
+Camada de Aplicação - Application Layer.
 
-Esta camada orquestra o fluxo da aplicação. Ela contém:
+Esta camada contém:
+- Casos de Uso (Use Cases): Ações do sistema
+- DTOs: Objetos de transferência de dados
 
-1. USE CASES (Casos de Uso):
-   - Implementam as ações que o sistema pode fazer
-   - Coordenam entidades e repositórios
-   - Exemplo: HandleMessageUseCase, GetProductsUseCase
-
-2. DTOs (Data Transfer Objects):
-   - Objetos para transferir dados entre camadas
-   - Validação de entrada/saída
-   - Exemplo: MessageDTO, ProductDTO
-
-REGRAS:
-- Pode importar de: domain
-- NÃO importar de: infrastructure, presentation
-- Use cases recebem repositórios por INJEÇÃO DE DEPENDÊNCIA
+A camada de aplicação:
+- Orquestra a lógica de negócio
+- Não conhece detalhes de infraestrutura
+- Depende apenas de INTERFACES
 """
+
+from src.application.dtos import (
+    IncomingMessageDTO,
+    MessageResponseDTO,
+    OutgoingMessageDTO,
+)
+from src.application.usecases import HandleMessageUseCase
+
+__all__ = [
+    # DTOs
+    "IncomingMessageDTO",
+    "MessageResponseDTO",
+    "OutgoingMessageDTO",
+    # Use Cases
+    "HandleMessageUseCase",
+]
