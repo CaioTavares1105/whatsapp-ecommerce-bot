@@ -27,8 +27,6 @@ from fastapi import APIRouter, Request, Query, HTTPException, BackgroundTasks
 from fastapi.responses import PlainTextResponse
 
 from src.infrastructure.whatsapp.webhook import WebhookHandler
-from src.infrastructure.whatsapp.client import WhatsAppClient
-from src.application.dtos import IncomingMessageDTO
 
 
 # Logger para debug
@@ -146,32 +144,23 @@ async def process_message(message_data: dict[str, Any]) -> None:
     Args:
         message_data: Dados extraídos da mensagem
     """
+    from src.presentation.api.dependencies import get_message_handler
+    
     logger.info(f"Processing message from {message_data.get('from')}")
     
     try:
-        # Monta DTO de entrada
-        phone = message_data.get("from", "")
-        text = message_data.get("text", "")
+        # Usa o handler para processar a mensagem
+        handler = get_message_handler()
         
-        if not text:
-            logger.info("Message without text, skipping")
-            return
-        
-        # Cria DTO
-        input_dto = IncomingMessageDTO(
-            phone_number=phone,
-            text=text,
-            message_id=message_data.get("message_id"),
-        )
-        
-        # TODO: Injetar UseCase via dependency injection
-        # Por enquanto, apenas loga
-        logger.info(f"Would process: {input_dto}")
-        
-        # Marca como lida
-        async with WhatsAppClient() as client:
-            if message_data.get("message_id"):
-                await client.mark_as_read(message_data["message_id"])
+        # Verifica se é resposta de botão
+        if message_data.get("button_id"):
+            await handler.handle_button_reply(
+                phone=message_data.get("from", ""),
+                button_id=message_data["button_id"],
+                message_id=message_data.get("message_id"),
+            )
+        else:
+            await handler.handle(message_data)
         
     except Exception as e:
-        logger.error(f"Error processing message: {e}")
+        logger.error(f"Error processing message: {e}", exc_info=True)
