@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(\"C:/Users/User/Desktop/WhatsApp chatBot/.venv/Scripts/python.exe\" --version)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(python -m pytest:*)"
     ]
   }
 }

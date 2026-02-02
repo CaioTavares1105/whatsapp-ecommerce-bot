@@ -137,6 +137,17 @@ class Settings(BaseSettings):
             True se app_env == "development"
         """
         return self.app_env == "development"
+    
+    # Propriedades de compatibilidade para WhatsApp
+    @property
+    def whatsapp_token(self) -> str:
+        """Alias para whatsapp_api_token."""
+        return self.whatsapp_api_token or ""
+    
+    @property
+    def whatsapp_app_secret(self) -> str:
+        """Alias para whatsapp_webhook_secret."""
+        return self.whatsapp_webhook_secret or ""
 
 
 # ===== FUNÇÃO PARA OBTER CONFIGURAÇÕES =====
