@@ -1,0 +1,59 @@
+# ===========================================================
+# .dockerignore - Arquivos ignorados pelo Docker
+# ===========================================================
+# Similar ao .gitignore, mas para o contexto do Docker.
+# Reduz tamanho da imagem e tempo de build.
+# ===========================================================
+
+# Ambiente virtual Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Arquivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Testes (não necessários em produção)
+tests/
+pytest.ini
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Documentação (não necessária em produção)
+docs/
+*.md
+!README.md
+
+# Arquivos temporários
+*.log
+*.tmp
+*.temp
+*.bak
+
+# Arquivos de ambiente local
+.env
+.env.local
+.env.*.local
+
+# Arquivos de build
+build/
+dist/
+*.egg-info/
+
+# Outros
+*.sqlite3
+*.db
+node_modules/

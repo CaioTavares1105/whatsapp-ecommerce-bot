@@ -1,0 +1,120 @@
+# ===========================================================
+# docker-compose.yml - Orquestração de Containers
+# ===========================================================
+# Define todos os serviços necessários para rodar a aplicação.
+#
+# SERVIÇOS:
+# - app: Aplicação FastAPI
+# - postgres: Banco de dados PostgreSQL
+# - redis: Cache e sessões
+#
+# COMO USAR:
+# docker-compose up -d          # Sobe todos os serviços
+# docker-compose down           # Para todos os serviços
+# docker-compose logs -f app    # Ver logs da aplicação
+# ===========================================================
+
+services:
+  # ===========================================================
+  # APLICAÇÃO PRINCIPAL
+  # ===========================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp-bot
+    ports:
+      - "8000:8000"
+    environment:
+      # Configurações da aplicação
+      - APP_NAME=whatsapp-ecommerce-bot
+      - APP_ENV=production
+      - DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:-changeme-in-production}
+      
+      # Banco de dados
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/whatsapp_bot
+      
+      # Redis
+      - REDIS_URL=redis://redis:6379/0
+      
+      # WhatsApp (configure com suas credenciais)
+      - WHATSAPP_API_TOKEN=${WHATSAPP_API_TOKEN:-}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-}
+      - WHATSAPP_WEBHOOK_SECRET=${WHATSAPP_WEBHOOK_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================
+  # BANCO DE DADOS POSTGRESQL
+  # ===========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: whatsapp-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=whatsapp_bot
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persiste dados do banco
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================
+  # CACHE REDIS
+  # ===========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: whatsapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      # Persiste dados do Redis
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ===========================================================
+# VOLUMES PERSISTENTES
+# ===========================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ===========================================================
+# REDE
+# ===========================================================
+networks:
+  whatsapp-network:
+    driver: bridge
