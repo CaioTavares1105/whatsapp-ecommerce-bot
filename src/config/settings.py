@@ -146,8 +146,37 @@ class Settings(BaseSettings):
     
     @property
     def whatsapp_app_secret(self) -> str:
-        """Alias para whatsapp_webhook_secret."""
+        """
+        Alias para whatsapp_webhook_secret.
+
+        SEGURANCA: Retorna string vazia se nao configurado,
+        mas o webhook.py deve validar se esta vazio em producao!
+        """
         return self.whatsapp_webhook_secret or ""
+
+    def validate_security(self) -> list[str]:
+        """
+        Valida configuracoes de seguranca.
+
+        Returns:
+            Lista de problemas encontrados (vazia se OK)
+        """
+        issues = []
+
+        if self.is_production:
+            if self.debug:
+                issues.append("CRITICAL: DEBUG=true em producao!")
+
+            if not self.whatsapp_webhook_secret:
+                issues.append("CRITICAL: WHATSAPP_WEBHOOK_SECRET vazio em producao!")
+
+            if not self.secret_key or len(self.secret_key) < 32:
+                issues.append("CRITICAL: SECRET_KEY muito curta (minimo 32 chars)!")
+
+            if "localhost" in self.database_url:
+                issues.append("WARNING: DATABASE_URL aponta para localhost em producao!")
+
+        return issues
 
 
 # ===== FUNÇÃO PARA OBTER CONFIGURAÇÕES =====

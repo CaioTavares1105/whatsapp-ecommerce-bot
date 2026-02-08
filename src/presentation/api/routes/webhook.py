@@ -103,20 +103,44 @@ async def receive_webhook(
         O WhatsApp espera resposta em até 5 segundos.
         Processamento direto é mais confiável que BackgroundTasks.
     """
-    # Lê body da requisição
+    # Limite de tamanho do payload (100KB max)
     body = await request.body()
-    payload = await request.json()
+    if len(body) > 100_000:
+        logger.warning(f"Payload too large: {len(body)} bytes")
+        raise HTTPException(status_code=413, detail="Payload too large")
 
-    # Log para debug
-    logger.info(f"Webhook received: {payload}")
+    try:
+        payload = await request.json()
+    except Exception:
+        logger.warning("Invalid JSON payload")
+        raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    # Valida assinatura (opcional em dev)
+    # Log SEM dados sensiveis (apenas metadata)
+    logger.info(f"Webhook received from WhatsApp")
+
+    # SEGURANCA: Valida assinatura HMAC (OBRIGATORIO em producao!)
+    from src.config.settings import get_settings
+    settings = get_settings()
+
     signature = request.headers.get("X-Hub-Signature-256")
-    if signature:
+
+    # Em producao, assinatura e OBRIGATORIA
+    if not settings.debug:
+        if not signature:
+            logger.warning("SECURITY: Missing webhook signature in production!")
+            raise HTTPException(status_code=401, detail="Missing signature")
+
         is_valid = webhook_handler.validate_signature(body, signature)
         if not is_valid:
-            logger.warning("Invalid webhook signature")
+            logger.warning("SECURITY: Invalid webhook signature!")
             raise HTTPException(status_code=401, detail="Invalid signature")
+    else:
+        # Em desenvolvimento, valida se presente
+        if signature:
+            is_valid = webhook_handler.validate_signature(body, signature)
+            if not is_valid:
+                logger.warning("Invalid webhook signature (dev mode)")
+                raise HTTPException(status_code=401, detail="Invalid signature")
 
     # Extrai dados da mensagem
     message_data = webhook_handler.extract_message_data(payload)
@@ -143,8 +167,10 @@ async def process_message(message_data: dict[str, Any]) -> None:
     from src.infrastructure.database.connection import AsyncSessionFactory
     from src.presentation.api.dependencies import get_message_handler
 
-    logger.info(f"🔄 Processing message from {message_data.get('from')}")
-    logger.info(f"📝 Message data: {message_data}")
+    # Log SEM dados sensiveis (telefone parcialmente oculto)
+    phone = message_data.get('from', '')
+    masked_phone = phone[:4] + '****' + phone[-2:] if len(phone) > 6 else '****'
+    logger.info(f"Processing message from {masked_phone}")
 
     try:
         # Cria sessão do banco para este processamento

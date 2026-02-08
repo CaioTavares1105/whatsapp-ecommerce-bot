@@ -89,13 +89,33 @@ app = FastAPI(
 # MIDDLEWARES
 # ===========================================================
 
-# CORS - Permite requisições de outros domínios
+# ===========================================================
+# SEGURANCA: CORS Restritivo
+# ===========================================================
+# Em producao, NUNCA usar allow_origins=["*"]!
+# Especificar apenas dominios confiaveis.
+
+# Lista de origens permitidas (configurar conforme ambiente)
+ALLOWED_ORIGINS = [
+    "https://graph.facebook.com",      # Meta/WhatsApp API
+    "https://developers.facebook.com",  # Meta Developers
+]
+
+# Em desenvolvimento, permite localhost
+if settings.is_development:
+    ALLOWED_ORIGINS.extend([
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000",
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especificar domínios
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,  # Desabilitar credenciais por padrao
+    allow_methods=["GET", "POST"],  # Apenas metodos necessarios
+    allow_headers=["Content-Type", "X-Hub-Signature-256"],  # Headers especificos
 )
 
 
@@ -103,26 +123,30 @@ app.add_middleware(
 # ROTAS
 # ===========================================================
 
-# Rota de health check
+# Rota de health check (minima informacao)
 @app.get("/health")
 async def health_check():
     """
-    Verifica se a aplicação está funcionando.
-    
+    Verifica se a aplicacao esta funcionando.
+
     Usado por load balancers e kubernetes.
+    Retorna informacao MINIMA para nao expor detalhes.
     """
-    return {"status": "healthy", "app": settings.app_name}
+    return {"status": "healthy"}
 
 
-# Rota raiz
+# Rota raiz (minima informacao em producao)
 @app.get("/")
 async def root():
-    """Rota raiz com informações da API."""
-    return {
-        "app": settings.app_name,
-        "version": "0.1.0",
-        "docs": "/docs" if settings.is_development else None,
-    }
+    """Rota raiz."""
+    if settings.is_development:
+        return {
+            "app": settings.app_name,
+            "version": "0.1.0",
+            "docs": "/docs",
+        }
+    # Em producao, nao expor detalhes
+    return {"status": "ok"}
 
 
 # Registrar routers

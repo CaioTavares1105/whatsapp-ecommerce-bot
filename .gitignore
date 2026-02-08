@@ -1,21 +1,184 @@
 # ===========================================================
 # .gitignore - WhatsApp E-commerce Bot
 # ===========================================================
-# Este arquivo define quais arquivos/pastas o Git deve IGNORAR
-# (não versionar). Isso é essencial para:
-# 1. Não versionar arquivos sensíveis (senhas, tokens)
-# 2. Não versionar arquivos gerados automaticamente
-# 3. Manter o repositório limpo e leve
+# SECURITY-FIRST GITIGNORE - PARANOID MODE
+# Este arquivo protege dados sensiveis de NUNCA serem commitados
 # ===========================================================
 
-# -----------------------------------------------------------
-# DOCUMENTAÇÃO PESSOAL - Não versionar
-# -----------------------------------------------------------
-# Arquivos de estudo e documentação pessoal
-# Esses arquivos são para aprendizado local
-docs/
-*.md
-!README.md
+# ###########################################################
+# SEGURANCA CRITICA - NUNCA COMMITAR ESTES ARQUIVOS!
+# ###########################################################
+
+# Variaveis de ambiente (TOKENS, SENHAS, CHAVES!)
+.env
+.env.*
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.staging
+.env.test
+*.env
+env.local
+local.env
+
+# Arquivos com segredos
+*secret*
+*credential*
+*password*
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+secrets.json
+credentials.json
+service-account*.json
+google-credentials*.json
+
+# Tokens e chaves API
+*token*
+*apikey*
+*api_key*
+*api-key*
+
+# WhatsApp session files (MUITO CRITICO!)
+auth_info/
+session/
+.wwebjs_auth/
+.wwebjs_cache/
+whatsapp-session/
+wa_session/
+
+# Arquivos de configuracao local do Claude
+.claude/
+
+# Arquivos de teste com dados reais
+test_flow.py
+test_real.py
+*_test_real*
+*_local_test*
+
+# Arquivos nul (Windows)
+nul
+
+# ###########################################################
+# PYTHON
+# ###########################################################
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ###########################################################
+# AMBIENTES VIRTUAIS
+# ###########################################################
+.venv/
+venv/
+ENV/
+env/
+.env.bak/
+
+# ###########################################################
+# IDEs
+# ###########################################################
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.spyderproject
+.spyproject
+
+# ###########################################################
+# TESTES
+# ###########################################################
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ###########################################################
+# BUILD
+# ###########################################################
+dist/
+build/
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+pip-wheel-metadata/
+__pypackages__/
+
+# ###########################################################
+# LOGS (podem conter dados sensiveis!)
+# ###########################################################
+*.log
+logs/
+log/
+*.log.*
+
+# ###########################################################
+# BANCO DE DADOS LOCAL
+# ###########################################################
+*.db
+*.sqlite3
+*.sqlite
+*.sql
+
+# ###########################################################
+# SISTEMA OPERACIONAL
+# ###########################################################
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*~
+.directory
+
+# ###########################################################
+# CACHE E TEMPORARIOS
+# ###########################################################
+*.tmp
+*.temp
+*.bak
+.cache/
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# ###########################################################
+# DOCKER
+# ###########################################################
+docker-compose.override.yml
+.docker/
+
+# ###########################################################
+# UV/PACKAGE MANAGERS
+# ###########################################################
+.uv/
 
 # -----------------------------------------------------------
 # PYTHON - Arquivos gerados pelo interpretador
