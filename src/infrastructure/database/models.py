@@ -248,7 +248,11 @@ class OrderModel(Base):
     
     # SQLEnum: Armazena enum como tipo nativo do PostgreSQL
     status: Mapped[OrderStatus] = mapped_column(
-        SQLEnum(OrderStatus, name="order_status"),
+        SQLEnum(
+            OrderStatus,
+            name="order_status",
+            values_callable=lambda x: [e.value for e in x],
+        ),
         default=OrderStatus.PENDING,
     )
     
@@ -305,7 +309,11 @@ class SessionModel(Base):
     )
     
     state: Mapped[SessionState] = mapped_column(
-        SQLEnum(SessionState, name="session_state"),
+        SQLEnum(
+            SessionState,
+            name="session_state",
+            values_callable=lambda x: [e.value for e in x],
+        ),
         default=SessionState.INITIAL,
     )
     

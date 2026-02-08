@@ -41,45 +41,50 @@ logger = logging.getLogger(__name__)
 class MessageHandler:
     """
     Orquestra o processamento de mensagens WhatsApp.
-    
+
     Conecta:
     - Webhook → UseCase → WhatsAppClient
-    
+
     Attributes:
         _use_case: Caso de uso principal
-        
+
     Example:
-        >>> handler = MessageHandler(
-        ...     customer_repo=repo1,
-        ...     session_repo=repo2,
-        ...     product_repo=repo3,
-        ...     order_repo=repo4,
-        ... )
+        >>> handler = MessageHandler(use_case=my_use_case)
         >>> await handler.handle(message_data)
     """
-    
+
     def __init__(
         self,
-        customer_repo: ICustomerRepository,
-        session_repo: ISessionRepository,
-        product_repo: IProductRepository,
-        order_repo: IOrderRepository,
+        use_case: HandleMessageUseCase | None = None,
+        # Parâmetros legados para compatibilidade
+        customer_repo: ICustomerRepository | None = None,
+        session_repo: ISessionRepository | None = None,
+        product_repo: IProductRepository | None = None,
+        order_repo: IOrderRepository | None = None,
     ) -> None:
         """
-        Inicializa handler com repositórios.
-        
+        Inicializa handler com use_case ou repositórios.
+
         Args:
-            customer_repo: Repositório de clientes
-            session_repo: Repositório de sessões
-            product_repo: Repositório de produtos
-            order_repo: Repositório de pedidos
+            use_case: Caso de uso já configurado (preferido)
+            customer_repo: Repositório de clientes (legado)
+            session_repo: Repositório de sessões (legado)
+            product_repo: Repositório de produtos (legado)
+            order_repo: Repositório de pedidos (legado)
         """
-        self._use_case = HandleMessageUseCase(
-            customer_repo=customer_repo,
-            session_repo=session_repo,
-            product_repo=product_repo,
-            order_repo=order_repo,
-        )
+        if use_case is not None:
+            self._use_case = use_case
+        elif all([customer_repo, session_repo, product_repo, order_repo]):
+            self._use_case = HandleMessageUseCase(
+                customer_repo=customer_repo,
+                session_repo=session_repo,
+                product_repo=product_repo,
+                order_repo=order_repo,
+            )
+        else:
+            raise ValueError(
+                "Forneça use_case ou todos os repositórios"
+            )
     
     async def handle(self, message_data: dict[str, Any]) -> None:
         """
@@ -120,10 +125,13 @@ class MessageHandler:
             
             # Envia resposta via WhatsApp
             async with WhatsAppClient() as client:
-                # Marca mensagem original como lida
+                # Marca mensagem original como lida (não bloqueia se falhar)
                 if message_id:
-                    await client.mark_as_read(message_id)
-                
+                    try:
+                        await client.mark_as_read(message_id)
+                    except Exception as mark_err:
+                        logger.warning(f"⚠️ Não foi possível marcar como lida: {mark_err}")
+
                 # Envia resposta
                 if response.should_transfer_to_human:
                     # Mensagem especial para transferência

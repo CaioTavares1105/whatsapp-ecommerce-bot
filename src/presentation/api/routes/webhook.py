@@ -23,7 +23,7 @@ Recebe e processa mensagens do WhatsApp Cloud API.
 from typing import Any
 import logging
 
-from fastapi import APIRouter, Request, Query, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Request, Query, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from src.infrastructure.whatsapp.webhook import WebhookHandler
@@ -79,39 +79,37 @@ async def verify_webhook(
 @router.post("")
 async def receive_webhook(
     request: Request,
-    background_tasks: BackgroundTasks,
 ) -> dict[str, str]:
     """
     Recebe mensagens do WhatsApp.
-    
+
     O WhatsApp envia POST com:
     - Header X-Hub-Signature-256 (HMAC)
     - Body JSON com dados da mensagem
-    
+
     Processamento:
     1. Valida assinatura HMAC
     2. Extrai dados da mensagem
-    3. Agenda processamento em background
-    4. Retorna 200 OK imediatamente
-    
+    3. Processa a mensagem diretamente
+    4. Retorna 200 OK
+
     Args:
         request: Requisição FastAPI
-        background_tasks: Para processar em background
-        
+
     Returns:
         Dict com status "received"
-        
+
     Note:
         O WhatsApp espera resposta em até 5 segundos.
-        Por isso processamos em background.
+        Processamento direto é mais confiável que BackgroundTasks.
     """
     # Lê body da requisição
     body = await request.body()
     payload = await request.json()
-    
+
     # Log para debug
-    logger.debug(f"Webhook received: {payload}")
-    
+    logger.info(f"Webhook received: {payload}")
+
     # Valida assinatura (opcional em dev)
     signature = request.headers.get("X-Hub-Signature-256")
     if signature:
@@ -119,48 +117,66 @@ async def receive_webhook(
         if not is_valid:
             logger.warning("Invalid webhook signature")
             raise HTTPException(status_code=401, detail="Invalid signature")
-    
+
     # Extrai dados da mensagem
     message_data = webhook_handler.extract_message_data(payload)
-    
+
     if message_data:
-        # Agenda processamento em background
-        background_tasks.add_task(
-            process_message,
-            message_data,
-        )
-    
-    # Retorna imediatamente (WhatsApp espera resposta rápida)
+        # Processa diretamente (sem BackgroundTasks)
+        # WhatsApp dá 5 segundos de timeout, suficiente para processar
+        await process_message(message_data)
+
+    # Retorna após processamento
     return {"status": "received"}
 
 
 async def process_message(message_data: dict[str, Any]) -> None:
     """
     Processa uma mensagem em background.
-    
+
     Chamado via BackgroundTasks para não bloquear
     a resposta ao WhatsApp.
-    
+
     Args:
         message_data: Dados extraídos da mensagem
     """
+    from src.infrastructure.database.connection import AsyncSessionFactory
     from src.presentation.api.dependencies import get_message_handler
-    
-    logger.info(f"Processing message from {message_data.get('from')}")
-    
+
+    logger.info(f"🔄 Processing message from {message_data.get('from')}")
+    logger.info(f"📝 Message data: {message_data}")
+
     try:
-        # Usa o handler para processar a mensagem
-        handler = get_message_handler()
-        
-        # Verifica se é resposta de botão
-        if message_data.get("button_id"):
-            await handler.handle_button_reply(
-                phone=message_data.get("from", ""),
-                button_id=message_data["button_id"],
-                message_id=message_data.get("message_id"),
-            )
-        else:
-            await handler.handle(message_data)
-        
+        # Cria sessão do banco para este processamento
+        logger.info("📊 Creating database session...")
+        async with AsyncSessionFactory() as session:
+            try:
+                # Usa o handler com a sessão real do banco
+                logger.info("🔧 Getting message handler...")
+                handler = await get_message_handler(session)
+                logger.info("✅ Handler obtained successfully")
+
+                # Verifica se é resposta de botão
+                if message_data.get("button_id"):
+                    logger.info("🔘 Processing button reply...")
+                    await handler.handle_button_reply(
+                        phone=message_data.get("from", ""),
+                        button_id=message_data["button_id"],
+                        message_id=message_data.get("message_id"),
+                    )
+                else:
+                    logger.info("💬 Processing text message...")
+                    await handler.handle(message_data)
+
+                # Commit das alterações no banco
+                logger.info("💾 Committing to database...")
+                await session.commit()
+                logger.info("✅ Message processed successfully!")
+
+            except Exception as e:
+                logger.error(f"❌ Error in handler: {e}", exc_info=True)
+                await session.rollback()
+                raise
+
     except Exception as e:
-        logger.error(f"Error processing message: {e}", exc_info=True)
+        logger.error(f"❌ Error processing message: {e}", exc_info=True)

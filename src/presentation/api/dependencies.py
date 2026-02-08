@@ -20,21 +20,27 @@
 Dependências para injeção no FastAPI.
 
 Centraliza a criação de repositórios e handlers.
+Usa implementações SQLAlchemy reais para produção.
 """
 
-from functools import lru_cache
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infrastructure.database.connection import AsyncSessionFactory
-from src.infrastructure.database.repositories import SQLAlchemyCustomerRepository
+from src.infrastructure.database.repositories import (
+    SQLAlchemyCustomerRepository,
+    SQLAlchemyProductRepository,
+    SQLAlchemyOrderRepository,
+    SQLAlchemySessionRepository,
+)
 from src.domain.repositories import (
     ICustomerRepository,
     ISessionRepository,
     IProductRepository,
     IOrderRepository,
 )
+from src.application.usecases.handle_message import HandleMessageUseCase
 from src.presentation.whatsapp.handler import MessageHandler
 
 
@@ -45,7 +51,7 @@ from src.presentation.whatsapp.handler import MessageHandler
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Cria sessão do banco para cada request.
-    
+
     Uso:
         @app.get("/users")
         async def get_users(db: AsyncSession = Depends(get_db_session)):
@@ -61,7 +67,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 # ===========================================================
-# REPOSITÓRIOS
+# REPOSITÓRIOS (Implementações reais SQLAlchemy)
 # ===========================================================
 
 async def get_customer_repository(
@@ -71,123 +77,61 @@ async def get_customer_repository(
     return SQLAlchemyCustomerRepository(session)
 
 
-# TODO: Implementar outros repositórios quando necessário
-# Por enquanto, usamos implementações mock para desenvolvimento
-
-class MockSessionRepository(ISessionRepository):
-    """Implementação mock do repositório de sessões."""
-    
-    async def find_by_customer(self, customer_id: str):
-        return None
-    
-    async def find_by_id(self, id: str):
-        return None
-    
-    async def save(self, session):
-        pass
-    
-    async def update(self, session):
-        pass
-    
-    async def delete(self, id: str):
-        pass
-    
-    async def delete_expired(self):
-        pass
+async def get_product_repository(
+    session: AsyncSession,
+) -> IProductRepository:
+    """Cria repositório de produtos."""
+    return SQLAlchemyProductRepository(session)
 
 
-class MockProductRepository(IProductRepository):
-    """Implementação mock do repositório de produtos."""
-    
-    async def find_all(self):
-        return []
-    
-    async def find_by_category(self, category: str):
-        return []
-    
-    async def find_by_id(self, id: str):
-        return None
-    
-    async def search(self, query: str):
-        return []
-    
-    async def save(self, product):
-        pass
-    
-    async def update(self, product):
-        pass
-    
-    async def delete(self, id: str):
-        pass
+async def get_order_repository(
+    session: AsyncSession,
+) -> IOrderRepository:
+    """Cria repositório de pedidos."""
+    return SQLAlchemyOrderRepository(session)
 
 
-class MockOrderRepository(IOrderRepository):
-    """Implementação mock do repositório de pedidos."""
-    
-    async def find_by_customer(self, customer_id: str):
-        return []
-    
-    async def find_by_id(self, id: str):
-        return None
-    
-    async def save(self, order):
-        pass
-    
-    async def update(self, order):
-        pass
-    
-    async def delete(self, id: str):
-        pass
-    
-    async def find_by_status(self, status):
-        return []
+async def get_session_repository(
+    session: AsyncSession,
+) -> ISessionRepository:
+    """Cria repositório de sessões de chat."""
+    return SQLAlchemySessionRepository(session)
+
+
+# ===========================================================
+# USE CASE
+# ===========================================================
+
+async def get_handle_message_use_case(
+    session: AsyncSession,
+) -> HandleMessageUseCase:
+    """
+    Cria o caso de uso de processamento de mensagens
+    com todas as dependências reais.
+    """
+    return HandleMessageUseCase(
+        customer_repo=SQLAlchemyCustomerRepository(session),
+        session_repo=SQLAlchemySessionRepository(session),
+        product_repo=SQLAlchemyProductRepository(session),
+        order_repo=SQLAlchemyOrderRepository(session),
+    )
 
 
 # ===========================================================
 # HANDLER DE MENSAGENS
 # ===========================================================
 
-@lru_cache
-def get_message_handler() -> MessageHandler:
+async def get_message_handler(
+    session: AsyncSession,
+) -> MessageHandler:
     """
-    Retorna handler de mensagens singleton.
-    
-    Usa @lru_cache para criar apenas uma instância.
-    Em produção, use dependency injection real com banco.
+    Cria handler de mensagens com dependências reais.
+
+    Esta função é chamada a cada request, criando
+    um handler com repositórios conectados ao banco.
     """
+    use_case = await get_handle_message_use_case(session)
+
     return MessageHandler(
-        customer_repo=MockCustomerRepository(),
-        session_repo=MockSessionRepository(),
-        product_repo=MockProductRepository(),
-        order_repo=MockOrderRepository(),
+        use_case=use_case,
     )
-
-
-class MockCustomerRepository(ICustomerRepository):
-    """Implementação mock do repositório de clientes."""
-    
-    _customers: dict = {}
-    
-    async def find_by_phone(self, phone: str):
-        return self._customers.get(phone)
-    
-    async def find_by_id(self, id: str):
-        for customer in self._customers.values():
-            if customer.id == id:
-                return customer
-        return None
-    
-    async def find_all(self):
-        return list(self._customers.values())
-    
-    async def save(self, customer):
-        self._customers[customer.phone_number] = customer
-    
-    async def update(self, customer):
-        self._customers[customer.phone_number] = customer
-    
-    async def delete(self, id: str):
-        for phone, customer in list(self._customers.items()):
-            if customer.id == id:
-                del self._customers[phone]
-                break
